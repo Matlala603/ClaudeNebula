@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Nebula</title>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .claude-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .clear-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+
+        .clear-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .message {
+            display: flex;
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .user-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .assistant-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            padding-top: 8px;
+        }
+
+        .message-text {
+            color: white;
+            line-height: 1.6;
+            font-size: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-area {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 24px;
+            box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 12px;
+            transition: all 0.3s;
+        }
+
+        .input-container:focus-within {
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .file-input-label:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .file-input-label svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        #prompt {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 15px;
+            resize: none;
+            max-height: 200px;
+            overflow-y: auto;
+            line-height: 1.5;
+            background: transparent;
+            color: white;
+            padding: 8px;
+        }
+
+        #prompt::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+        }
+
+        .send-button:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            30% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .empty-state {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state h2 {
+            color: white;
+            font-size: 32px;
+            margin-bottom: 16px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .empty-state p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .history-info {
+            background: rgba(102, 126, 234, 0.15);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .file-chip {
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-chip button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .image-preview {
+            max-width: 300px;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="claude-logo">N</div>
+        <div class="header-title">Claude Nebula</div>
+        <button class="clear-button" onclick="clearConversation()">Clear Chat</button>
+    </div>
+
+    <div class="chat-container" id="chat">
+        <div class="empty-state">
+            <h2>Welcome to Claude Nebula</h2>
+            <p>I'll remember everything we discuss. Upload images or files, and let's explore together!</p>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper">
+            <div class="history-info" id="historyInfo">
+                💾 Conversation memory active - All messages saved
+            </div>
+            <div class="file-preview" id="filePreview"></div>
+            <div class="input-container">
+                <label for="fileInput" class="file-input-label" title="Upload image or file">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                </label>
+                <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.doc,.docx,.json,.csv" multiple onchange="handleFileSelect(event)">
+                <textarea 
+                    id="prompt" 
+                    placeholder="Message Claude Nebula..." 
+                    rows="1"
+                    onkeydown="handleKeyPress(event)"
+                ></textarea>
+                <button class="send-button" onclick="sendMessage()" id="sendBtn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let history = [];
+        let attachedFiles = [];
+        const STORAGE_KEY = 'claude_nebula_history';
+
+        function loadHistory() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    history = JSON.parse(saved);
+                    console.log('Loaded conversation history:', history.length, 'messages');
+                    
+                    if (history.length > 0) {
+                        const chat = document.getElementById('chat');
+                        chat.innerHTML = '';
+                        
+                        history.forEach(msg => {
+                            displayMessage(msg.role, msg.content, msg.images);
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading history:', e);
+            }
+        }
+
+        function saveHistory() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+                console.log('Saved conversation history:', history.length, 'messages');
+                updateHistoryInfo();
+            } catch (e) {
+                console.error('Error saving history:', e);
+            }
+        }
+
+        function updateHistoryInfo() {
+            const info = document.getElementById('historyInfo');
+            info.textContent = `💾 ${history.length} messages saved in memory`;
+        }
+
+        function displayMessage(role, content, images = []) {
+            const chat = document.getElementById('chat');
+            
+            const emptyState = chat.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+
+            const avatar = document.createElement('div');
+            avatar.className = `avatar ${role === 'user' ? 'user-avatar' : 'assistant-avatar'}`;
+            avatar.textContent = role === 'user' ? 'Y' : 'N';
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+
+            if (images && images.length > 0) {
+                images.forEach(imgData => {
+                    const img = document.createElement('img');
+                    img.src = imgData;
+                    img.className = 'image-preview';
+                    messageContent.appendChild(img);
+                });
+            }
+
+            const messageText = document.createElement('div');
+            messageText.className = 'message-text';
+            messageText.textContent = content;
+
+            messageContent.appendChild(messageText);
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            chat.appendChild(messageDiv);
+
+            chat.scrollTop = chat.scrollHeight;
+
+            return messageText;
+        }
+
+        function showTypingIndicator() {
+            const chat = document.getElementById('chat');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.id = 'typing-indicator';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar assistant-avatar';
+            avatar.textContent = 'N';
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+
+            messageContent.appendChild(indicator);
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            chat.appendChild(messageDiv);
+
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        async function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            const preview = document.getElementById('filePreview');
+            
+            for (const file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        attachedFiles.push({
+                            type: 'image',
+                            data: e.target.result,
+                            name: file.name
+                        });
+                        
+                        const chip = document.createElement('div');
+                        chip.className = 'file-chip';
+                        chip.innerHTML = `📷 ${file.name} <button onclick="removeFile(${attachedFiles.length - 1})">×</button>`;
+                        preview.appendChild(chip);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        attachedFiles.push({
+                            type: 'file',
+                            data: e.target.result,
+                            name: file.name
+                        });
+                        
+                        const chip = document.createElement('div');
+                        chip.className = 'file-chip';
+                        chip.innerHTML = `📄 ${file.name} <button onclick="removeFile(${attachedFiles.length - 1})">×</button>`;
+                        preview.appendChild(chip);
+                    };
+                    reader.readAsText(file);
+                }
+            }
+            
+            event.target.value = '';
+        }
+
+        function removeFile(index) {
+            attachedFiles.splice(index, 1);
+            updateFilePreview();
+        }
+
+        function updateFilePreview() {
+            const preview = document.getElementById('filePreview');
+            preview.innerHTML = '';
+            attachedFiles.forEach((file, i) => {
+                const chip = document.createElement('div');
+                chip.className = 'file-chip';
+                const icon = file.type === 'image' ? '📷' : '📄';
+                chip.innerHTML = `${icon} ${file.name} <button onclick="removeFile(${i})">×</button>`;
+                preview.appendChild(chip);
+            });
+        }
+
+        async function sendMessage() {
+            const promptInput = document.getElementById('prompt');
+            const sendBtn = document.getElementById('sendBtn');
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt && attachedFiles.length === 0) return;
+
+            promptInput.disabled = true;
+            sendBtn.disabled = true;
+
+            const imageData = attachedFiles.filter(f => f.type === 'image').map(f => f.data);
+            let fullPrompt = prompt;
+            
+            if (attachedFiles.some(f => f.type === 'file')) {
+                fullPrompt += '\n\nAttached files:\n';
+                attachedFiles.filter(f => f.type === 'file').forEach(f => {
+                    fullPrompt += `\n--- ${f.name} ---\n${f.data}\n`;
+                });
+            }
+
+            displayMessage('user', prompt, imageData);
+
+            const userMessage = { role: 'user', content: fullPrompt };
+            if (imageData.length > 0) {
+                userMessage.images = imageData;
+            }
+            history.push(userMessage);
+            saveHistory();
+
+            promptInput.value = '';
+            promptInput.style.height = 'auto';
+            attachedFiles = [];
+            document.getElementById('filePreview').innerHTML = '';
+
+            showTypingIndicator();
+
+            try {
+                const response = await puter.ai.chat(history, {
+                    model: 'claude-sonnet-4-5',
+                    stream: true
+                });
+
+                removeTypingIndicator();
+                const assistantText = displayMessage('assistant', '');
+
+                let fullText = '';
+                for await (const part of response) {
+                    const textChunk = part?.text || '';
+                    fullText += textChunk;
+                    assistantText.textContent = fullText;
+                    
+                    const chat = document.getElementById('chat');
+                    chat.scrollTop = chat.scrollHeight;
+                }
+
+                history.push({ role: 'assistant', content: fullText });
+                saveHistory();
+
+            } catch (error) {
+                removeTypingIndicator();
+                displayMessage('assistant', `Error: ${error.message}`);
+                console.error('Error:', error);
+            } finally {
+                promptInput.disabled = false;
+                sendBtn.disabled = false;
+                promptInput.focus();
+            }
+        }
+
+        function clearConversation() {
+            if (confirm('Are you sure you want to clear the entire conversation? This cannot be undone.')) {
+                history = [];
+                localStorage.removeItem(STORAGE_KEY);
+                
+                const chat = document.getElementById('chat');
+                chat.innerHTML = `
+                    <div class="empty-state">
+                        <h2>Welcome to Claude Nebula</h2>
+                        <p>I'll remember everything we discuss. Upload images or files, and let's explore together!</p>
+                    </div>
+                `;
+                
+                updateHistoryInfo();
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        const textarea = document.getElementById('prompt');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        window.addEventListener('DOMContentLoaded', loadHistory);
+    </script>
+</body>
+</html>
